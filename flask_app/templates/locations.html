@@ -10,4 +10,50 @@
 
     	</p>
     {% endfor %}
+
+
+    <h2>Add a new location</h2>
+    <form method="post">
+
+	<p><label for="street_num">Street Num</label>
+		<input type="text" name="street_num" placeholder="Street Num"></input>
+	</p>
+
+	<p><label for="street_name">Street Name</label>
+		<input type="text" name="street_name" placeholder="Street Name"></input>
+	</p>
+
+	<p><label for="apt_num">Apt num</label>
+		<input type="text" name="apt_num" placeholder="Apt Num"></input>
+	</p>
+
+	<p><label for="city">City</label>
+		<input type="text" name="city" placeholder="City"></input>
+	</p>
+
+	<p><label for="state">State</label>
+		<input type="text" name="state" placeholder="State"></input>
+	</p>
+
+	<p><label for="zipcode">Zipcode</label>
+		<input type="text" name="zipcode" placeholder="Zipcode"></input>
+	</p>
+
+	<p><label for="num_br">Num BR</label>
+		<input type="text" name="num_br" placeholder="Num Bedrooms"></input>
+	</p>
+
+	<p><label for="num_occupants">Num Occupants</label>
+		<input type="text" name="num_occupants" placeholder="Num Occupants"></input>
+	</p>
+
+	<p><label for="sqft">Sq Ft</label>
+		<input type="text" name="sqft" placeholder="SqFt"></input>
+	</p>
+
+	<p>
+		<button type="submit">Submit</button>
+	</p>
+
+	</form>
 {% endblock %}
