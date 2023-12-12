@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %} {% endblock %}- FlaskApp</title>
+</head>
+<body>
+    {% if nav_bar %} 
+    <nav>
+        <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('locations') }}">Locations</a>
+        <a href="{{ url_for('devices') }}">Devices</a>
+        <a href="{{ url_for('logout')}}">Logout</a>
+    </nav>
+
+    {% else %}
+    <nav>
+        <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('register') }}">Register</a>
+        <a href="{{ url_for('login') }}">Login</a>
+    </nav>
+
+    {% endif %}
+{% block content %} {% endblock %}
+</body>
+</html>

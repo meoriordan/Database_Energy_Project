@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %} Locations {% endblock %}</h1>
+
+    {% for location in locations %}
+
+    	<p>{{ location[0]}} {{location[1]}} 
+{{location[2]}}  {{location[3]}}  {{location[4]}}  {{location[5]}}  {{location[6]}} 
+
+    	</p>
+    {% endfor %}
+{% endblock %}

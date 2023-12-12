@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %} Devices {% endblock %}</h1>
+
+    {% for device in devices %}
+
+    	<p>{{ device[0]}} {{device[1]}} 
+{{device[2]}} 
+
+    	</p>
+    {% endfor %}
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>{% block title %} Add a New Device {% endblock %}</h1>
+
+<form method="post">
+
+	<p><label for="model">Model</label>
+		<input type="text" name="model" placeholder="Device Model"></input>
+	</p>
+
+
+	<p><label for="type">Type</label>
+		<input type="text" name="type" placeholder="Type"></input>
+	</p>
+
+
+	<p><label for="description">Description</label>
+		<textarea type="text" name="description" placeholder="Description"></textarea>
+	</p>	
+
+	<p>
+		<button type="submit">Submit</button>
+	</p>
+
+	</form>
+
+{% endblock %}
