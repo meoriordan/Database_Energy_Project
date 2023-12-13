@@ -2,10 +2,13 @@ import os
 import psycopg2
 from flask import Flask, render_template, request, url_for, redirect, session
 from datetime import date
+import dotenv
 
 app = Flask(__name__)
 
 app.secret_key = 'my secret key'
+
+dotenv.dotenv_values('.env')
 
 def get_db_connection():
     conn = psycopg2.connect(host='localhost',
@@ -62,7 +65,10 @@ def login():
             msg='Incorrect login info.'
         cur.close()
         conn.close()
-        return render_template("login.html", msg=msg, nav_bar = session['loggedin'])
+        if account:
+            return render_template("index.html", nav_bar = session['loggedin'])
+        else:
+            return render_template("login.html", msg=msg, nav_bar = session['loggedin'])
     else:
         return render_template("login.html", nav_bar = session['loggedin'])
 
@@ -102,9 +108,14 @@ def locations():
         customer_id = session['id']
         conn = get_db_connection()
         cur = conn.cursor()
+
         cur.execute('SELECT max(location_id) FROM locations;')
         location_id = cur.fetchall()[0][0]
-        location_id += 1
+        if location_id is None:
+            location_id = 1
+        else:
+            location_id += 1
+
         # print('CUSTOMER IDDDDD: ',customer_id)
         cur.execute('INSERT INTO locations (location_id, customer_id,street_num, street_name, apt_num, city, state, zipcode, num_br, num_occupants, sqft, date_added)'
             'VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)',

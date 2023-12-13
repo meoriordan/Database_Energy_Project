@@ -1,13 +1,88 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>{% block title %} Devices {% endblock %}</h1>
+    <div class="container-md text-center">
+        <br/><br/>
+        <h1>{% block title %} Devices {% endblock %}</h1>
+        <hr/>
+        <br/>
+        {% if devices|length==0 %}
+            <h3>No devices found.</h3>
+        {% else %}
+            {% for device in devices %}
 
-    {% for device in devices %}
+                <h4>{{ device[0] }} {{ device[1] }}
+                    {{ device[2] }}
 
-    	<p>{{ device[0]}} {{device[1]}}
-{{device[2]}} 
+                </h4>
+            {% endfor %}
+        {% endif %}
+        <hr/>
+        <br/>
+        <button class="btn btn-primary"
+                type="button"
+                data-mdb-collapse-init
+                data-mdb-ripple-init
+                data-mdb-target="#add_device"
+                aria-expanded="false"
+                aria-controls="add_device"
+        >
+            Add a new device
+        </button>
+        <div class="container-sm collapse" id="add_device">
+            <br/>
+            <h3>New address:</h3>
+            <form method="post">
+                <br/>
+                <div class="form-outline" data-mdb-input-init>
+                    <input type="number" id="form12" class="form-control" name="street_num"/>
+                    <label class="form-label text-center" for="form12">Street Number</label>
+                </div>
+                <br/>
+                <div class="form-outline" data-mdb-input-init>
+                    <input type="text" id="form12" class="form-control" name="street_name"/>
+                    <label class="form-label text-center" for="form12">Street Name</label>
+                </div>
+                <br/>
+                <div class="form-outline" data-mdb-input-init>
+                    <input type="text" id="form12" class="form-control" name="apt_num"/>
+                    <label class="form-label text-center" for="form12">Apartment, Suite #</label>
+                </div>
+                <br/>
+                <div class="form-outline" data-mdb-input-init>
+                    <input type="text" id="form12" class="form-control" name="city"/>
+                    <label class="form-label text-center" for="form12">City</label>
+                </div>
+                <br/>
+                <div class="form-outline" data-mdb-input-init>
+                    <input type="text" id="form12" class="form-control" name="state"/>
+                    <label class="form-label text-center" for="form12">State</label>
+                </div>
+                <br/>
+                <div class="form-outline" data-mdb-input-init>
+                    <input type="number" id="form12" class="form-control" name="zipcode"/>
+                    <label class="form-label text-center" for="form12">ZIP Code</label>
+                </div>
 
-    	</p>
-    {% endfor %}
+                <br/>
+                <div class="form-outline" data-mdb-input-init>
+                    <input type="number" id="form12" class="form-control" name="num_br"/>
+                    <label class="form-label text-center" for="form12">Number of bedroom</label>
+                </div>
+                <br/>
+                <div class="form-outline" data-mdb-input-init>
+                    <input type="number" id="form12" class="form-control" name="num_occupant"/>
+                    <label class="form-label text-center" for="form12">Number of occupants</label>
+                </div>
+                <br/>
+                <div class="form-outline" data-mdb-input-init>
+                    <input type="number" id="form12" class="form-control" name="sqft"/>
+                    <label class="form-label text-center" for="form12">Square footage</label>
+                </div>
+                <br/>
+                <button class="btn btn-primary" type="submit">Submit</button>
+            </form>
+        </div>
+    </div>
+    <br/>
 {% endblock %}

@@ -1,59 +1,114 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>{% block title %} Locations {% endblock %}</h1>
+    <div class="container-md">
+        <br/><br/>
+        <h1 class="text-center">{% block title %} Registered Locations {% endblock %}</h1>
+        <hr/>
+        <br/>
+        {% if locations|length==0 %}
+            <h3 class="text-center">No service location found.</h3>
+        {% else %}
+            <table class="table text-center">
+                <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Street Address</th>
+                    <th scope="col">Apartment Number</th>
+                    <th scope="col">City, State</th>
+                    <th scope="col">ZIP Code</th>
+                    <th scope="col"># Bedrooms</th>
+                    <th scope="col"># Occupants</th>
+                    <th scope="col">Area (sqft)</th>
+                    <th scope="col">Date Added</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for location in locations %}
+                    <tr>
+                    <th scope="row">{{ loop.index }}</th>
+                    <td>{{ location[2]|string+' '+location[3] }}</td>
+                    <td>{{ location[4] }}</td>
+                    <td>{{ location[5]+', '+location[6] }}</td>
+                    <td>{{ location[7] }}</td>
+                    <td>{{ location[8] }}</td>
+                    <td>{{ location[9] }}</td>
+                    <td>{{ location[10] }}</td>
+                    <td>{{ location[11] }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
 
-    {% for location in locations %}
+        {% endif %}
+        <hr/>
+        <br/>
+        <div class="text-center">
+            <button class="btn btn-primary"
+                    type="button"
+                    data-mdb-collapse-init
+                    data-mdb-ripple-init
+                    data-mdb-target="#add_address"
+                    aria-expanded="false"
+                    aria-controls="add_address"
+            >
+                Add a new location
+            </button>
+            <div class="container-sm collapse" id="add_address">
+                <br/>
+                <h3>New address:</h3>
+                <form method="post">
+                    <br/>
+                    <div class="form-outline" data-mdb-input-init>
+                        <input type="number" id="form12" class="form-control" name="street_num"/>
+                        <label class="form-label text-center" for="form12">Street Number</label>
+                    </div>
+                    <br/>
+                    <div class="form-outline" data-mdb-input-init>
+                        <input type="text" id="form12" class="form-control" name="street_name"/>
+                        <label class="form-label text-center" for="form12">Street Name</label>
+                    </div>
+                    <br/>
+                    <div class="form-outline" data-mdb-input-init>
+                        <input type="text" id="form12" class="form-control" name="apt_num"/>
+                        <label class="form-label text-center" for="form12">Apartment, Suite #</label>
+                    </div>
+                    <br/>
+                    <div class="form-outline" data-mdb-input-init>
+                        <input type="text" id="form12" class="form-control" name="city"/>
+                        <label class="form-label text-center" for="form12">City</label>
+                    </div>
+                    <br/>
+                    <div class="form-outline" data-mdb-input-init>
+                        <input type="text" id="form12" class="form-control" name="state"/>
+                        <label class="form-label text-center" for="form12">State</label>
+                    </div>
+                    <br/>
+                    <div class="form-outline" data-mdb-input-init>
+                        <input type="number" id="form12" class="form-control" name="zipcode"/>
+                        <label class="form-label text-center" for="form12">ZIP Code</label>
+                    </div>
 
-    	<p>{{ location[0]}} {{location[1]}} 
-{{location[2]}}  {{location[3]}}  {{location[4]}}  {{location[5]}}  {{location[6]}} 
-
-    	</p>
-    {% endfor %}
-
-
-    <h2>Add a new location</h2>
-    <form method="post">
-
-	<p><label for="street_num">Street Num</label>
-		<input type="text" name="street_num" placeholder="Street Num"></input>
-	</p>
-
-	<p><label for="street_name">Street Name</label>
-		<input type="text" name="street_name" placeholder="Street Name"></input>
-	</p>
-
-	<p><label for="apt_num">Apt num</label>
-		<input type="text" name="apt_num" placeholder="Apt Num"></input>
-	</p>
-
-	<p><label for="city">City</label>
-		<input type="text" name="city" placeholder="City"></input>
-	</p>
-
-	<p><label for="state">State</label>
-		<input type="text" name="state" placeholder="State"></input>
-	</p>
-
-	<p><label for="zipcode">Zipcode</label>
-		<input type="text" name="zipcode" placeholder="Zipcode"></input>
-	</p>
-
-	<p><label for="num_br">Num BR</label>
-		<input type="text" name="num_br" placeholder="Num Bedrooms"></input>
-	</p>
-
-	<p><label for="num_occupants">Num Occupants</label>
-		<input type="text" name="num_occupants" placeholder="Num Occupants"></input>
-	</p>
-
-	<p><label for="sqft">Sq Ft</label>
-		<input type="text" name="sqft" placeholder="SqFt"></input>
-	</p>
-
-	<p>
-		<button type="submit">Submit</button>
-	</p>
-
-	</form>
+                    <br/>
+                    <div class="form-outline" data-mdb-input-init>
+                        <input type="number" id="form12" class="form-control" name="num_br"/>
+                        <label class="form-label text-center" for="form12">Number of bedroom</label>
+                    </div>
+                    <br/>
+                    <div class="form-outline" data-mdb-input-init>
+                        <input type="number" id="form12" class="form-control" name="num_occupants"/>
+                        <label class="form-label text-center" for="form12">Number of occupants</label>
+                    </div>
+                    <br/>
+                    <div class="form-outline" data-mdb-input-init>
+                        <input type="number" id="form12" class="form-control" name="sqft"/>
+                        <label class="form-label text-center" for="form12">Square footage</label>
+                    </div>
+                    <br/>
+                    <button class="btn btn-primary" type="submit">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <br/>
 {% endblock %}
