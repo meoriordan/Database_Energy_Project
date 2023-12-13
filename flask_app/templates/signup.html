@@ -1,31 +1,36 @@
 {% extends 'base.html' %}
 
 {% block content %}
+    <div class="container-md">
+        <br/><br/><br/><br/><br/><br/><br/>
+        <h1 class="text-center">{% block title %} Sign Up for an Account {% endblock %}</h1>
+        <hr/>
+        <br/>
+        <form method="post">
+            <div class="form-outline" data-mdb-input-init>
+                <input type="text" id="form12" class="form-control" name="fname"/>
+                <label class="form-label" for="form12">First Name</label>
+            </div>
+            <br/>
+            <div class="form-outline" data-mdb-input-init>
+                <input type="text" id="form12" class="form-control" name="lname"/>
+                <label class="form-label" for="form12">Last Name</label>
+            </div>
+            <br/>
+            <div class="form-outline" data-mdb-input-init>
+                <input type="text" id="form12" class="form-control" name="uname"/>
+                <label class="form-label" for="form12">Username</label>
+            </div>
+            <br/>
+            <div class="form-outline" data-mdb-input-init>
+                <input type="text" id="form12" class="form-control" name="password"/>
+                <label class="form-label" for="form12">Password</label>
+            </div>
+            <br/>
+            <button class="btn btn-primary" type="submit">Submit</button>
 
-<h1>{% block title %} Sign Up for an Account {% endblock %}</h1>
 
-<form method="post">
-
-	<p><label for="fname">First Name</label>
-		<input type="text" name="fname"></input>
-	</p>
-
-	<p><label for="lname">Last Name</label>
-		<input type="text" name="lname"></input>
-	</p>
-
-	<p><label for="uname">User Name</label>
-		<input type="text" name="uname"></input>
-	</p>
-
-	<p><label for="password">Password</label>
-		<input type="text" name="password"></input>
-	</p>
-
-	<p>
-		<button type="submit">Submit</button>
-	</p>
-
-	</form>
-
+        </form>
+    </div>
+<br/>
 {% endblock %}

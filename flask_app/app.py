@@ -12,7 +12,7 @@ def get_db_connection():
                             database='final_project',
                             user=os.environ['DB_USERNAME'],
                             password=os.environ['DB_PASSWORD'],
-                            port=5434)
+                            )
     return conn
 
 
