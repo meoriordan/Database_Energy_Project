@@ -115,17 +115,41 @@ def locations():
         return redirect(url_for('locations'))
 
 
-@app.route('/devices')
+@app.route('/devices', methods=('GET','POST'))
 def devices():
-    if session['loggedin'] == True:
+    if request.method == 'GET':
+        if session['loggedin'] == True:
+            cust_id = str(session['id'])
+            conn = get_db_connection() 
+            cur = conn.cursor() 
+            cur.execute('SELECT d.* FROM locations l join location_devices ld on l.location_id = ld.location_id join devices d on ld.device_id = d.device_id WHERE customer_id = %s', (cust_id))
+            devices = cur.fetchall()
+            cur.execute('SELECT * FROM devices;')
+            all_devices = cur.fetchall()
+            cur.execute('SELECT * from locations where customer_id = %s' % cust_id)
+            locations = cur.fetchall()
+            cur.close()
+            conn.close()
+            return render_template("devices.html", devices=devices, all_devices = all_devices, locations = locations, nav_bar = session['loggedin'])
+        else:
+            return redirect(url_for('login')) 
+    elif request.method == 'POST':
+        device_name = str(request.form['newdevice'])
+        location = str(request.form['location'])
         cust_id = str(session['id'])
-        conn = get_db_connection() 
-        cur = conn.cursor() 
-        cur.execute('SELECT d.* FROM locations l join location_devices ld on l.location_id = ld.location_id join devices d on ld.device_id = d.device_id WHERE customer_id = %s', (cust_id))
-        devices = cur.fetchall()
-        return render_template("devices.html", devices=devices, nav_bar = session['loggedin'])
-    else:
-        return redirect(url_for('login'))   
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT device_id FROM devices WHERE model = '%s'" % (device_name))
+        device_id = cur.fetchone()
+        cur.execute("SELECT max(device_enrollment_id) FROM location_devices;")
+        device_enrollment_id = cur.fetchall()[0][0]
+        device_enrollment_id += 1
+        cur.execute('INSERT INTO location_devices (device_enrollment_id, location_id, device_id)'
+        'VALUES(%s, %s, %s)',(device_enrollment_id,location, device_id))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return redirect(url_for('devices'))
 
 
 

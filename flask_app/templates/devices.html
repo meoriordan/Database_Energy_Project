@@ -10,4 +10,30 @@
 
     	</p>
     {% endfor %}
+
+    <h2>Add a New Device</h2>
+
+  <form method="post">
+  	<label for="newdevice>">New Device</label>
+  	<p>
+  	<select name="newdevice">
+  		{% for device in all_devices %}
+  			<option value="{{ device[1] }}" SELECTED>{{device[1]}}</option>
+  		{% endfor %}
+  	</select>
+	</p>
+
+	<p>
+	 <select name="location">
+		{% for location in locations %}
+			<option value="{{location[0]}}" SELECTED>{{location[2]}}  {{location[3]}} {{location[4]}}</option>
+		{% endfor %}
+	</select>
+	</p>
+	<p>
+		<button type="submit">Submit</button>
+	</p>
+
+	</form>
+
 {% endblock %}
