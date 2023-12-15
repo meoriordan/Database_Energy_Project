@@ -168,7 +168,6 @@ def devices():
                 'WHERE customer_id = %s',
                 (cust_id))
             devices = cur.fetchall()
-            print(devices)
             cur.execute('SELECT DISTINCT device_type FROM devices')
             types = [i[0] for i in cur.fetchall()]
             cur.execute('SELECT DISTINCT device_type, model FROM devices')
@@ -227,3 +226,71 @@ def create():
         conn.close()
         return redirect(url_for('index'))
     return render_template('create.html')
+
+
+@app.route('/dashboard', methods=['GET'])
+def dashboard():
+    if session['loggedin']:
+        cust_id = str(session['id'])
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("SELECT DATE_TRUNC('hour', event_occurrence), SUM(value) "
+                    "FROM events JOIN location_devices USING (device_enrollment_id) JOIN locations USING (location_id) "
+                    "WHERE customer_id=%s AND (event_type = 'energy consumption' OR event_type = 'switch off')"
+                    "GROUP BY DATE_TRUNC('hour', event_occurrence)", (cust_id,))
+        hourly_sum = cur.fetchall
+
+        cur.execute('SELECT device_type, SUM(value) '
+                    'FROM events JOIN location_devices USING (device_enrollment_id) JOIN locations USING (location_id) '
+                    'JOIN devices USING (device_id) '
+                    "WHERE customer_id = %s AND (event_type = 'energy consumption' OR event_type = 'switch off') "
+                    'GROUP BY device_type', (cust_id,))
+        type_sum = cur.fetchall()
+
+        cur.execute("SELECT location_id, sqft, SUM(value) "
+                    "FROM locations JOIN events USING (device_enrollment_id) "
+                    "WHERE customer_id = %s AND event_occurrence > NOW() - '30 days' AND "
+                    "(event_type = 'energy consumption' OR event_type = 'switch off') "
+                    "GROUP BY 1, 2", (cust_id,))
+        loc_sqft_list = cur.fetchall()
+        usage_percentile_sqft = []
+        for location in loc_sqft_list:
+            cur.execute("SELECT location_id, RANK() OVER (ORDER BY SUM(value)) "
+                        "FROM locations JOIN events USING (device_enrollment_id) "
+                        "WHERE sqft BETWEEN %s+50 AND %s-50 AND location_id <> %s "
+                        "AND event_occurrence > NOW() - '30 days' AND "
+                        "(event_type = 'energy consumption' OR event_type = 'switch off') "
+                        "GROUP BY location_id"
+                        , (location[1], location[1], location[0]))
+            similar_sqft = cur.fetchall()
+            # (location_id, ranking, length)
+            usage_percentile_sqft.append(
+                (location[0], next(i for i in similar_sqft if i[0] == location[0])[1], len(similar_sqft))
+            )
+
+        cur.execute("SELECT location_id, num_occupants, SUM(value) "
+                    "FROM locations JOIN events USING (device_enrollment_id) "
+                    "WHERE customer_id = %s AND event_occurrence > NOW() - '30 days' AND "
+                    "(event_type = 'energy consumption' OR event_type = 'switch off') "
+                    "GROUP BY 1, 2", (cust_id,))
+        loc_occupants_list = cur.fetchall()
+        usage_percentile_occupants = []
+        for location in loc_occupants_list:
+            cur.execute("SELECT location_id, RANK() OVER (ORDER BY SUM(value)) "
+                        "FROM locations JOIN events USING (device_enrollment_id) "
+                        "WHERE occupants BETWEEN %s+1 AND %s-1 AND event_occurrence > NOW() - '30 days' AND "
+                        "(event_type = 'energy consumption' OR event_type = 'switch off') "
+                        "GROUP BY location_id"
+                        , (location[1], location[1], location[0]))
+            similar_occupants = cur.fetchall()
+            # (location_id, ranking, length)
+            usage_percentile_occupants.append(
+                (location[0], next(i for i in similar_occupants if i[0] == location[0])[1], len(similar_occupants))
+            )
+
+        return render_template('dashboard.html', nav_bar=session['loggedin'], hourly_sum=hourly_sum,
+                               type_sum=type_sum, usage_percentile_sqft=usage_percentile_sqft,
+                               usage_percentile_occupants=usage_percentile_occupants)
+    else:
+        return redirect(url_for('login'))
