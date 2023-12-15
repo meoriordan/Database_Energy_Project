@@ -83,6 +83,16 @@ def logout():
     return redirect(url_for('login'))
 
 
+@app.route('/locations/delete/<int:location_id>', methods=['POST'])
+def delete_location(location_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM locations WHERE location_id = %s', (location_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('locations'))
+
+
 @app.route('/locations', methods=('GET', 'POST'))
 def locations():
     if request.method == 'GET':
@@ -134,6 +144,16 @@ def locations():
         return redirect(url_for('locations'))
 
 
+@app.route('/devices/delete/<int:device_enrollment_id>', methods=['POST'])
+def delete_devices(device_enrollment_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM location_devices WHERE device_enrollment_id = %s', (device_enrollment_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('devices'))
+
+
 @app.route('/devices', methods=['GET', 'POST'])
 def devices():
     if session['loggedin']:
@@ -160,10 +180,13 @@ def devices():
             return render_template("devices.html", devices=devices, types=types, type_models=type_models,
                                    locations=locations, nav_bar=session['loggedin'])
         else:
-            device_id = request.form['model']
+            model = request.form['model']
             location_id = request.form['location']
             conn = get_db_connection()
             cur = conn.cursor()
+
+            cur.execute('SELECT device_id FROM devices WHERE model = %s', (model,))  # should be unique for every model
+            (device_id,) = cur.fetchone()
 
             cur.execute('SELECT max(device_enrollment_id) FROM location_devices;')
             device_enrollment_id = cur.fetchall()[0][0]
