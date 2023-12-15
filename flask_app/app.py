@@ -2,17 +2,21 @@ import os
 import psycopg2
 from flask import Flask, render_template, request, url_for, redirect, session
 from datetime import date
+import dotenv
 
 app = Flask(__name__)
 
 app.secret_key = 'my secret key'
+
+dotenv.dotenv_values('.env')
+
 
 def get_db_connection():
     conn = psycopg2.connect(host='localhost',
                             database='final_project',
                             user=os.environ['DB_USERNAME'],
                             password=os.environ['DB_PASSWORD'],
-                            port=5434)
+                            )
     return conn
 
 
@@ -20,72 +24,88 @@ def get_db_connection():
 def index():
     if 'loggedin' not in session:
         session['loggedin'] = False
-    return render_template('index.html', nav_bar = session['loggedin'])
+    return render_template('index.html', nav_bar=session['loggedin'])
 
-@app.route('/register', methods=["GET","POST"])
+
+@app.route('/register', methods=["GET", "POST"])
 def register():
-    if request.method=="POST":
+    if request.method == "POST":
         first_name = request.form['fname']
         last_name = request.form['lname']
         username = request.form['uname']
         password = request.form['password']
-        conn = get_db_connection() 
-        cur = conn.cursor() 
+        conn = get_db_connection()
+        cur = conn.cursor()
         cur.execute('SELECT max(customer_id) FROM customers;')
         customer_id = cur.fetchall()[0][0]
         customer_id += 1
-        print('CUSTOMER IDDDDD: ',customer_id)
+        print('CUSTOMER IDDDDD: ', customer_id)
         cur.execute('INSERT INTO customers (customer_id, first_name,last_name, username, password)'
-            'VALUES(%s, %s, %s, %s, %s)',
-            (customer_id,first_name, last_name, username, password))
+                    'VALUES(%s, %s, %s, %s, %s)',
+                    (customer_id, first_name, last_name, username, password))
         conn.commit()
         cur.close()
         conn.close()
-    return render_template("signup.html", nav_bar = session['loggedin'])
+    return render_template("signup.html", nav_bar=session['loggedin'])
 
 
-@app.route('/login', methods=["GET","POST"])
+@app.route('/login', methods=["GET", "POST"])
 def login():
-    if request.method=="POST":
+    if request.method == "POST":
         username = request.form['uname']
         password = request.form['password']
-        conn = get_db_connection() 
-        cur = conn.cursor() 
-        cur.execute('SELECT * FROM customers where username = %s and password = %s',(username, password))
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('SELECT * FROM customers where username = %s and password = %s', (username, password))
         account = cur.fetchone()
         if account:
-            session['loggedin'] = True 
+            session['loggedin'] = True
             session['id'] = account[0]
             session['username'] = account[1]
             msg = 'Logged In!'
         else:
-            msg='Incorrect login info.'
+            msg = 'Incorrect login info.'
         cur.close()
         conn.close()
-        return render_template("login.html", msg=msg, nav_bar = session['loggedin'])
+        if account:
+            return render_template("index.html", nav_bar=session['loggedin'])
+        else:
+            return render_template("login.html", msg=msg, nav_bar=session['loggedin'])
     else:
-        return render_template("login.html", nav_bar = session['loggedin'])
+        return render_template("login.html", nav_bar=session['loggedin'])
+
 
 @app.route('/logout')
 def logout():
-    session['loggedin'] = False 
+    session['loggedin'] = False
     session['id'] = None
     session['username'] = None
     return redirect(url_for('login'))
 
-@app.route('/locations', methods=('GET','POST'))
+
+@app.route('/locations/delete/<int:location_id>', methods=['POST'])
+def delete_location(location_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM locations WHERE location_id = %s', (location_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('locations'))
+
+
+@app.route('/locations', methods=('GET', 'POST'))
 def locations():
     if request.method == 'GET':
-        if session['loggedin'] == True:
+        if session['loggedin']:
             cust_id = str(session['id'])
-            print('cust id issssss(', cust_id,')')
-            conn = get_db_connection() 
-            cur = conn.cursor() 
+            print('cust id issssss(', cust_id, ')')
+            conn = get_db_connection()
+            cur = conn.cursor()
             cur.execute('SELECT * FROM locations WHERE customer_id = %s', (cust_id))
             locations = cur.fetchall()
             cur.close()
             conn.close()
-            return render_template("locations.html", locations=locations , nav_bar = session['loggedin'])
+            return render_template("locations.html", locations=locations, nav_bar=session['loggedin'])
         else:
             return redirect(url_for('login'))
     elif request.method == 'POST':
@@ -102,58 +122,92 @@ def locations():
         customer_id = session['id']
         conn = get_db_connection()
         cur = conn.cursor()
+
         cur.execute('SELECT max(location_id) FROM locations;')
         location_id = cur.fetchall()[0][0]
-        location_id += 1
+        if location_id is None:
+            location_id = 1
+        else:
+            location_id += 1
+
         # print('CUSTOMER IDDDDD: ',customer_id)
-        cur.execute('INSERT INTO locations (location_id, customer_id,street_num, street_name, apt_num, city, state, zipcode, num_br, num_occupants, sqft, date_added)'
+        cur.execute(
+            'INSERT INTO locations (location_id, customer_id,street_num, street_name, apt_num, city, state, zipcode, num_br, num_occupants, sqft, date_added)'
             'VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)',
-            (location_id, customer_id,street_num, street_name, apt_num, city, state, zipcode, num_br, num_occupants, sqft, date_added))
+            (
+                location_id, customer_id, street_num, street_name, apt_num, city, state, zipcode, num_br,
+                num_occupants,
+                sqft, date_added))
         conn.commit()
         cur.close()
         conn.close()
         return redirect(url_for('locations'))
 
 
-@app.route('/devices', methods=('GET','POST'))
+@app.route('/devices/delete/<int:device_enrollment_id>', methods=['POST'])
+def delete_devices(device_enrollment_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM location_devices WHERE device_enrollment_id = %s', (device_enrollment_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('devices'))
+
+
+@app.route('/devices', methods=['GET', 'POST'])
 def devices():
-    if request.method == 'GET':
-        if session['loggedin'] == True:
+    if session['loggedin']:
+        if request.method == 'GET':
             cust_id = str(session['id'])
-            conn = get_db_connection() 
-            cur = conn.cursor() 
-            cur.execute('SELECT d.* FROM locations l join location_devices ld on l.location_id = ld.location_id join devices d on ld.device_id = d.device_id WHERE customer_id = %s', (cust_id))
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                'SELECT * '
+                'FROM locations l join location_devices ld on l.location_id = ld.location_id '
+                'join devices d on ld.device_id = d.device_id '
+                'WHERE customer_id = %s',
+                (cust_id))
             devices = cur.fetchall()
-            cur.execute('SELECT * FROM devices;')
-            all_devices = cur.fetchall()
-            cur.execute('SELECT * from locations where customer_id = %s' % cust_id)
+            print(devices)
+            cur.execute('SELECT DISTINCT device_type FROM devices')
+            types = [i[0] for i in cur.fetchall()]
+            cur.execute('SELECT DISTINCT device_type, model FROM devices')
+            type_models = cur.fetchall()
+            cur.execute('SELECT location_id, street_num, street_name, apt_num, city, state , zipcode '
+                        'FROM locations WHERE customer_id = %s', (cust_id))
             locations = cur.fetchall()
+
+            return render_template("devices.html", devices=devices, types=types, type_models=type_models,
+                                   locations=locations, nav_bar=session['loggedin'])
+        else:
+            model = request.form['model']
+            location_id = request.form['location']
+            conn = get_db_connection()
+            cur = conn.cursor()
+
+            cur.execute('SELECT device_id FROM devices WHERE model = %s', (model,))  # should be unique for every model
+            (device_id,) = cur.fetchone()
+
+            cur.execute('SELECT max(device_enrollment_id) FROM location_devices;')
+            device_enrollment_id = cur.fetchall()[0][0]
+            if device_enrollment_id is None:
+                device_enrollment_id = 1
+            else:
+                device_enrollment_id += 1
+
+            cur.execute('INSERT INTO location_devices (device_enrollment_id, location_id, device_id)'
+                        'VALUES(%s, %s, %s)',
+                        (device_enrollment_id, location_id, device_id))
+            conn.commit()
             cur.close()
             conn.close()
-            return render_template("devices.html", devices=devices, all_devices = all_devices, locations = locations, nav_bar = session['loggedin'])
-        else:
-            return redirect(url_for('login')) 
-    elif request.method == 'POST':
-        device_name = str(request.form['newdevice'])
-        location = str(request.form['location'])
-        cust_id = str(session['id'])
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT device_id FROM devices WHERE model = '%s'" % (device_name))
-        device_id = cur.fetchone()
-        cur.execute("SELECT max(device_enrollment_id) FROM location_devices;")
-        device_enrollment_id = cur.fetchall()[0][0]
-        device_enrollment_id += 1
-        cur.execute('INSERT INTO location_devices (device_enrollment_id, location_id, device_id)'
-        'VALUES(%s, %s, %s)',(device_enrollment_id,location, device_id))
-        conn.commit()
-        cur.close()
-        conn.close()
-        return redirect(url_for('devices'))
+
+            return redirect(url_for('devices'))
+    else:
+        return redirect(url_for('login'))
 
 
-
-@app.route('/create', methods=('GET','POST'))
+@app.route('/create', methods=('GET', 'POST'))
 def create():
     if request.method == 'POST':
         model = request.form['model']
@@ -161,7 +215,7 @@ def create():
         description = request.form['description']
 
         conn = get_db_connection()
-        cur = conn.cursor() 
+        cur = conn.cursor()
         cur.execute('SELECT max(device_id) FROM devices;')
         device_id = cur.fetchall()[0][0]
         device_id += 1
@@ -171,5 +225,5 @@ def create():
         conn.commit()
         cur.close()
         conn.close()
-        return redirect(url_for('index'))  
+        return redirect(url_for('index'))
     return render_template('create.html')

@@ -1,39 +1,111 @@
 {% extends 'base.html' %}
 
 {% block content %}
+  <div class="container-md text-center">
+    <br/><br/>
     <h1>{% block title %} Devices {% endblock %}</h1>
+    <hr/>
+    <br/>
+    {% if devices|length==0 %}
+      <h3>No devices found.</h3>
+    {% else %}
+      <table class="table text-center">
+        <thead>
+        <tr>
+          <th scope="col">Address</th>
+          <th scope="col">Device Type</th>
+          <th scope="col">Model</th>
+          <th scope="col">Description</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for device in devices %}
+          <tr>
+            <th scope="row">{{ device[2]|string+' '+device[3]+', Apt '+device[4]+', '+device[5]+', '+
+                    device[6]+' '+device[7]|string }}</th>
+            <td>{{ device[17] }}</td>
+            <td>{{ device[16] }}</td>
+            <td>{{ device[18] }}</td>
+            <td>
+              <form action="{{ url_for('delete_devices', device_enrollment_id=device[0]) }}" method="POST">
+                <button type="submit" class="btn btn-danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+    <hr/>
+    <br/>
+    <button class="btn btn-primary"
+            type="button"
+            data-mdb-collapse-init
+            data-mdb-ripple-init
+            data-mdb-target="#add_device"
+            aria-expanded="false"
+            aria-controls="add_device"
+    >
+      Add a new device
+    </button>
+    <div class="container-sm collapse" id="add_device">
+      <br/>
+      <h3>New device:</h3>
+      <form method="post">
+        <br/>
+        <select class="form-select" name="location" id="location" required>
+          <option value="" selected>Location</option>
+          {% for location in locations %}
+            <option value="{{ location[0] }}">
+              {{ location[1]|string +' '+ location[2]+', Apt '+location[3]|string+', '+location[4]+', '+
+                            location[5]+' '+location[6]|string }}
+            </option>
+          {% endfor %}
+        </select>
+        <label class="form-label text-center" for="location">Device Location</label>
 
-    {% for device in devices %}
+        <br/>
+        <select class="form-select" name="device_type" id="device_type" required onChange="filterModel()">
+          <option value="" selected>Device Type</option>
+          {% for type in types %}
+            <option value="{{ type }}">{{ type }}</option>
+          {% endfor %}
+        </select>
+        <label class="form-label text-center" for="device_type">Device Type</label>
+        <br/>
+        <script type="text/javascript">
+          const filterModel = () => {
+            const model = document.getElementById('model');
+            const device_type = document.getElementById('device_type');
+            if (device_type.value === '') {
+              model.disabled = true;
+              model.value = '';
+            } else {
+              model.disabled = false;
+              let i, L = model.length - 1;
+              for (i = L; i >= 0; i--) {
+                model.remove(i);
+              }
+              model.add(new Option("Model", ""), undefined);
+              model.value = "";
+              {% for type_model in type_models %}
+                if ("{{ type_model[0] }}" === device_type.value) {
+                  let new_option = new Option("{{ type_model[1] }}", "{{ type_model[1] }}");
+                  model.add(new_option, undefined);
+                }
+              {% endfor %}
+            }
+          }
+        </script>
+        <select class="form-select" name="model" id="model" disabled required>
+        </select>
+        <label class="form-label text-center" for="model">Model</label>
 
-    	<p>{{ device[0]}} {{device[1]}} 
-{{device[2]}} 
-
-    	</p>
-    {% endfor %}
-
-    <h2>Add a New Device</h2>
-
-  <form method="post">
-  	<label for="newdevice>">New Device</label>
-  	<p>
-  	<select name="newdevice">
-  		{% for device in all_devices %}
-  			<option value="{{ device[1] }}" SELECTED>{{device[1]}}</option>
-  		{% endfor %}
-  	</select>
-	</p>
-
-	<p>
-	 <select name="location">
-		{% for location in locations %}
-			<option value="{{location[0]}}" SELECTED>{{location[2]}}  {{location[3]}} {{location[4]}}</option>
-		{% endfor %}
-	</select>
-	</p>
-	<p>
-		<button type="submit">Submit</button>
-	</p>
-
-	</form>
+        <br/>
+        <button class="btn btn-primary" type="submit">Submit</button>
+      </form>
+    </div>
+  </div>
+  <br/>
 
 {% endblock %}
