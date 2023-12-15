@@ -249,17 +249,18 @@ def dashboard():
         type_sum = cur.fetchall()
 
         cur.execute("SELECT location_id, sqft, SUM(value) "
-                    "FROM locations JOIN events USING (device_enrollment_id) "
-                    "WHERE customer_id = %s AND event_occurrence > NOW() - '30 days' AND "
+                    "FROM events JOIN location_devices USING(device_enrollment_id) JOIN locations USING (location_id) "
+                    "WHERE customer_id = %s AND event_occurrence > NOW() - INTERVAL '30 days' AND "
                     "(event_type = 'energy consumption' OR event_type = 'switch off') "
                     "GROUP BY 1, 2", (cust_id,))
         loc_sqft_list = cur.fetchall()
         usage_percentile_sqft = []
         for location in loc_sqft_list:
             cur.execute("SELECT location_id, RANK() OVER (ORDER BY SUM(value)) "
-                        "FROM locations JOIN events USING (device_enrollment_id) "
+                        "FROM events JOIN location_devices USING(device_enrollment_id) "
+                        "JOIN locations USING (location_id) "
                         "WHERE sqft BETWEEN %s+50 AND %s-50 AND location_id <> %s "
-                        "AND event_occurrence > NOW() - '30 days' AND "
+                        "AND event_occurrence > NOW() - INTERVAL '30 days' AND "
                         "(event_type = 'energy consumption' OR event_type = 'switch off') "
                         "GROUP BY location_id"
                         , (location[1], location[1], location[0]))
@@ -270,16 +271,17 @@ def dashboard():
             )
 
         cur.execute("SELECT location_id, num_occupants, SUM(value) "
-                    "FROM locations JOIN events USING (device_enrollment_id) "
-                    "WHERE customer_id = %s AND event_occurrence > NOW() - '30 days' AND "
+                    "FROM events JOIN location_devices USING(device_enrollment_id) JOIN locations USING (location_id) "
+                    "WHERE customer_id = %s AND event_occurrence > NOW() - INTERVAL '30 days' AND "
                     "(event_type = 'energy consumption' OR event_type = 'switch off') "
                     "GROUP BY 1, 2", (cust_id,))
         loc_occupants_list = cur.fetchall()
         usage_percentile_occupants = []
         for location in loc_occupants_list:
             cur.execute("SELECT location_id, RANK() OVER (ORDER BY SUM(value)) "
-                        "FROM locations JOIN events USING (device_enrollment_id) "
-                        "WHERE occupants BETWEEN %s+1 AND %s-1 AND event_occurrence > NOW() - '30 days' AND "
+                        "FROM events JOIN location_devices USING(device_enrollment_id) "
+                        "JOIN locations USING (location_id) "
+                        "WHERE occupants BETWEEN %s+1 AND %s-1 AND event_occurrence > NOW() - INTERVAL '30 days' AND "
                         "(event_type = 'energy consumption' OR event_type = 'switch off') "
                         "GROUP BY location_id"
                         , (location[1], location[1], location[0]))
