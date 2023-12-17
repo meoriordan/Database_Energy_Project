@@ -6,6 +6,7 @@ conn = psycopg2.connect(
         database="final_project",
         user=os.environ['DB_USERNAME'],
         password=os.environ['DB_PASSWORD'],
+        port=5434
        )
 
 # Open a cursor to perform database operations
