@@ -16,6 +16,7 @@ def get_db_connection():
                             database='final_project',
                             user=os.environ['DB_USERNAME'],
                             password=os.environ['DB_PASSWORD'],
+                            port=5434
                             )
     return conn
 
@@ -239,7 +240,7 @@ def dashboard():
                     "FROM events JOIN location_devices USING (device_enrollment_id) JOIN locations USING (location_id) "
                     "WHERE customer_id=%s AND (event_type = 'energy consumption' OR event_type = 'switch off')"
                     "GROUP BY DATE_TRUNC('hour', event_occurrence)", (cust_id,))
-        hourly_sum = cur.fetchall
+        hourly_sum = cur.fetchall()
 
         cur.execute('SELECT device_type, SUM(value) '
                     'FROM events JOIN location_devices USING (device_enrollment_id) JOIN locations USING (location_id) '
@@ -259,7 +260,7 @@ def dashboard():
             cur.execute("SELECT location_id, RANK() OVER (ORDER BY SUM(value)) "
                         "FROM events JOIN location_devices USING(device_enrollment_id) "
                         "JOIN locations USING (location_id) "
-                        "WHERE sqft BETWEEN %s+50 AND %s-50 AND location_id <> %s "
+                        "WHERE sqft BETWEEN %s-50 AND %s+50 AND location_id <> %s "
                         "AND event_occurrence > NOW() - INTERVAL '30 days' AND "
                         "(event_type = 'energy consumption' OR event_type = 'switch off') "
                         "GROUP BY location_id"
@@ -281,7 +282,7 @@ def dashboard():
             cur.execute("SELECT location_id, RANK() OVER (ORDER BY SUM(value)) "
                         "FROM events JOIN location_devices USING(device_enrollment_id) "
                         "JOIN locations USING (location_id) "
-                        "WHERE occupants BETWEEN %s+1 AND %s-1 AND event_occurrence > NOW() - INTERVAL '30 days' AND "
+                        "WHERE num_occupants BETWEEN %s-1 AND %s+1 AND event_occurrence > NOW() - INTERVAL '30 days' AND "
                         "(event_type = 'energy consumption' OR event_type = 'switch off') "
                         "GROUP BY location_id"
                         , (location[1], location[1], location[0]))

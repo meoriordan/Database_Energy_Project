@@ -22,13 +22,12 @@
         <tbody>
         {% for device in devices %}
           <tr>
-            <th scope="row">{{ device[2]|string+' '+device[3]+', Apt '+device[4]+', '+device[5]+', '+
-                    device[6]+' '+device[7]|string }}</th>
+            <th scope="row">{{ device[2]|string+' '+device[3]|string+', Apt '+device[4]|string+', '+device[5]|string+', '+device[6]|string+' '+device[7]|string }}</th>
             <td>{{ device[17] }}</td>
             <td>{{ device[16] }}</td>
             <td>{{ device[18] }}</td>
             <td>
-              <form action="{{ url_for('delete_devices', device_enrollment_id=device[0]) }}" method="POST">
+              <form action="{{ url_for('delete_devices', device_enrollment_id=device[12]) }}" method="POST">
                 <button type="submit" class="btn btn-danger">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash"
                        viewBox="0 0 16 16">

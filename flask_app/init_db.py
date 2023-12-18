@@ -6,16 +6,11 @@ conn = psycopg2.connect(
         database="final_project",
         user=os.environ['DB_USERNAME'],
         password=os.environ['DB_PASSWORD'],
+        port=5434
        )
 
 # Open a cursor to perform database operations
 cur = conn.cursor()
-
-# Execute a command: this creates a new table
-cur.execute('DROP TABLE IF EXISTS books;')
-
-
-# Insert data into the table
 
 cur.execute('DROP TABLE IF EXISTS events;')
 cur.execute('DROP TABLE IF EXISTS location_devices;')
