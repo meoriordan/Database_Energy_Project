@@ -1,11 +1,77 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container-md text-center">
+
+  <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
+  </script>
+
+  <div class="container-md text-center">
     <br/><br/>
     <br/><br/>
     <h1>{% block title %} Dashboard {% endblock %}</h1>
     <hr/>
     <br/>
-</div>
+    <h2>Energy usage over time</h2>
+
+    <canvas id="over_time" style="width:100%;max-width:700px;margin-left:auto;margin-right:auto"></canvas>
+    <script type="text/javascript">
+      let xValues = [];
+      let yValues = [];
+
+      {% for hour in hourly_sum %}
+        xValues.push(hour[0])
+        yValues.push(hour[1])
+      {% endfor %}
+
+      new Chart("over_time", {
+        type: "line",
+        data: {
+          labels: xValues,
+          datasets: [{
+            backgroundColor: "rgba(0,0,255,0.3)",
+            borderColor: "rgba(0,0,255,1.0)",
+            data: yValues
+          }]
+        },
+        options: {}
+      });
+    </script>
+    <hr/>
+    <h2>Energy usage by device type</h2>
+    <canvas id="by_device" style="width:100%;max-width:700px;margin-left:auto;margin-right:auto"></canvas>
+    <script type="text/javascript">
+      let xValues = [];
+      let yValues = [];
+
+      {% for type in type_sum %}
+        xValues.push(type[0])
+        yValues.push(type[1])
+      {% endfor %}
+
+      new Chart("by_device", {
+        type: "bar",
+        data: {
+          labels: xValues,
+          datasets: [{
+            backgroundColor: "rgba(0,0,255,0.3)",
+            borderColor: "rgba(0,0,255,1.0)",
+            data: yValues
+          }]
+        },
+        options: {}
+      });
+    </script>
+    <hr/>
+    <h2>Energy usage ranking against locations with similar area (last 30 days)</h2>
+    {% for location in usage_rank_sqft %}
+      <p>location id: {{ location[0] }}; rank {{ location[1] }} out of {{ location[2] }}</p>
+    {% endfor %}
+    <hr/>
+    <h2>Energy usage ranking against locations with similar number of occupants (last 30 days)</h2>
+    {% for location in usage_percentile_occupants %}
+      <p>location id: {{ location[0] }}; rank {{ location[1] }} out of {{ location[2] }}</p>
+    {% endfor %}
+    <hr/>
+  </div>
 {% endblock %}

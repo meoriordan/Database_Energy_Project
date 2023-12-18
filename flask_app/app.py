@@ -16,7 +16,7 @@ def get_db_connection():
                             database='final_project',
                             user=os.environ['DB_USERNAME'],
                             password=os.environ['DB_PASSWORD'],
-                            port=5434
+                            # port=5434
                             )
     return conn
 
@@ -255,7 +255,7 @@ def dashboard():
                     "(event_type = 'energy consumption' OR event_type = 'switch off') "
                     "GROUP BY 1, 2", (cust_id,))
         loc_sqft_list = cur.fetchall()
-        usage_percentile_sqft = []
+        usage_rank_sqft = []
         for location in loc_sqft_list:
             cur.execute("SELECT location_id, RANK() OVER (ORDER BY SUM(value)) "
                         "FROM events JOIN location_devices USING(device_enrollment_id) "
@@ -267,7 +267,7 @@ def dashboard():
                         , (location[1], location[1], location[0]))
             similar_sqft = cur.fetchall()
             # (location_id, ranking, length)
-            usage_percentile_sqft.append(
+            usage_rank_sqft.append(
                 (location[0], next(i for i in similar_sqft if i[0] == location[0])[1], len(similar_sqft))
             )
 
@@ -277,7 +277,7 @@ def dashboard():
                     "(event_type = 'energy consumption' OR event_type = 'switch off') "
                     "GROUP BY 1, 2", (cust_id,))
         loc_occupants_list = cur.fetchall()
-        usage_percentile_occupants = []
+        usage_rank_occupants = []
         for location in loc_occupants_list:
             cur.execute("SELECT location_id, RANK() OVER (ORDER BY SUM(value)) "
                         "FROM events JOIN location_devices USING(device_enrollment_id) "
@@ -288,12 +288,12 @@ def dashboard():
                         , (location[1], location[1], location[0]))
             similar_occupants = cur.fetchall()
             # (location_id, ranking, length)
-            usage_percentile_occupants.append(
+            usage_rank_occupants.append(
                 (location[0], next(i for i in similar_occupants if i[0] == location[0])[1], len(similar_occupants))
             )
 
         return render_template('dashboard.html', nav_bar=session['loggedin'], hourly_sum=hourly_sum,
-                               type_sum=type_sum, usage_percentile_sqft=usage_percentile_sqft,
-                               usage_percentile_occupants=usage_percentile_occupants)
+                               type_sum=type_sum, usage_percentile_sqft=usage_rank_sqft,
+                               usage_percentile_occupants=usage_rank_occupants)
     else:
         return redirect(url_for('login'))
