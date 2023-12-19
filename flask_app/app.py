@@ -37,13 +37,14 @@ def register():
         last_name = request.form['lname']
         username = request.form['uname']
         password = request.form['password']
+
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute('SELECT max(customer_id) FROM customers;')
         customer_id = cur.fetchall()[0][0]
         customer_id += 1
         cur.execute('INSERT INTO customers (customer_id, first_name,last_name, username, password)'
-                    'VALUES(%s, %s, %s, %s, %s)',
+                    "VALUES(%s, %s, %s, %s, crypt(%s, gen_salt('bf')))",
                     (customer_id, first_name, last_name, username, password))
         conn.commit()
         cur.close()
@@ -58,7 +59,7 @@ def login():
         password = request.form['password']
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute('SELECT * FROM customers where username = %s and password = %s', (username, password))
+        cur.execute('SELECT * FROM customers where username = %s and password = crypt(%s, password)', (username, password))
         account = cur.fetchone()
         if account:
             session['loggedin'] = True
