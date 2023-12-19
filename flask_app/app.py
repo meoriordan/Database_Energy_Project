@@ -40,7 +40,6 @@ def register():
         cur.execute('SELECT max(customer_id) FROM customers;')
         customer_id = cur.fetchall()[0][0]
         customer_id += 1
-        print('CUSTOMER IDDDDD: ', customer_id)
         cur.execute('INSERT INTO customers (customer_id, first_name,last_name, username, password)'
                     'VALUES(%s, %s, %s, %s, %s)',
                     (customer_id, first_name, last_name, username, password))
@@ -99,10 +98,9 @@ def locations():
     if request.method == 'GET':
         if session['loggedin']:
             cust_id = str(session['id'])
-            print('cust id issssss(', cust_id, ')')
             conn = get_db_connection()
             cur = conn.cursor()
-            cur.execute('SELECT * FROM locations WHERE customer_id = %s', (cust_id))
+            cur.execute('SELECT * FROM locations WHERE customer_id = %s', (cust_id,))
             locations = cur.fetchall()
             cur.close()
             conn.close()
@@ -131,7 +129,6 @@ def locations():
         else:
             location_id += 1
 
-        # print('CUSTOMER IDDDDD: ',customer_id)
         cur.execute(
             'INSERT INTO locations (location_id, customer_id,street_num, street_name, apt_num, city, state, zipcode, num_br, num_occupants, sqft, date_added)'
             'VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)',
@@ -167,14 +164,14 @@ def devices():
                 'FROM locations l join location_devices ld on l.location_id = ld.location_id '
                 'join devices d on ld.device_id = d.device_id '
                 'WHERE customer_id = %s',
-                (cust_id))
+                (cust_id,))
             devices = cur.fetchall()
             cur.execute('SELECT DISTINCT device_type FROM devices')
             types = [i[0] for i in cur.fetchall()]
             cur.execute('SELECT DISTINCT device_type, model FROM devices')
             type_models = cur.fetchall()
             cur.execute('SELECT location_id, street_num, street_name, apt_num, city, state , zipcode '
-                        'FROM locations WHERE customer_id = %s', (cust_id))
+                        'FROM locations WHERE customer_id = %s', (cust_id,))
             locations = cur.fetchall()
 
             return render_template("devices.html", devices=devices, types=types, type_models=type_models,
