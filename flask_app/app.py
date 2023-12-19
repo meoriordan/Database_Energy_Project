@@ -3,10 +3,12 @@ import psycopg2
 from flask import Flask, render_template, request, url_for, redirect, session
 from datetime import date
 import dotenv
+from flask_wtf import CSRFProtect
 
 app = Flask(__name__)
 
 app.secret_key = 'my secret key'
+csrf = CSRFProtect(app)
 
 dotenv.dotenv_values('.env')
 

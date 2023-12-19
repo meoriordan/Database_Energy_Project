@@ -36,6 +36,8 @@
             <td>{{ location[11] }}</td>
             <td>
               <form action="{{ url_for("delete_location", location_id=location[0]) }}" method="POST">
+                          <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" />  
+
                 <button type="submit" class="btn btn-danger">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash"
                        viewBox="0 0 16 16">
@@ -117,6 +119,7 @@
             <label class="form-label text-center" for="form12">Square footage</label>
           </div>
           <br/>
+          <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" />  
           <button class="btn btn-primary" type="submit">Submit</button>
         </form>
       </div>
