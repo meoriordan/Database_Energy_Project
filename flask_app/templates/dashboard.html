@@ -26,6 +26,7 @@
     </script>
     <canvas id="over_time" style="width:100%;max-width:1000px;margin-left:auto;margin-right:auto"></canvas>
     <script type="text/javascript">
+      let line_chart;
       const update_time_chart = () => {
         let xValues = ['12:00 AM', '1:00 AM', '2:00 AM', '3:00 AM', '4:00 AM', '5:00 AM', '6:00 AM', '7:00 AM',
           '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM',
@@ -39,7 +40,10 @@
             yValues[new Date('{{hour[0]}}').getHours()] = {{hour[1]}};
           }
         {% endfor %}
-        new Chart("over_time", {
+        if (line_chart !== undefined) {
+          line_chart.destroy();
+        }
+        line_chart = new Chart("over_time", {
           type: "line",
           data: {
             labels: xValues,
@@ -67,6 +71,7 @@
     <canvas id="by_device" style="width:100%;max-width:700px;margin-left:auto;margin-right:auto"></canvas>
 
     <script type="text/javascript">
+      let pie_chart;
       const update_type_chart = () => {
         let xValues = [];
         let yValues = [];
@@ -88,7 +93,10 @@
           {% endfor %}
         }
 
-        new Chart("by_device", {
+        if (pie_chart !== undefined) {
+          pie_chart.destroy();
+        }
+        pie_chart = new Chart("by_device", {
           type: "pie",
           data: {
             labels: xValues,
@@ -107,6 +115,7 @@
           options: {},
           borderWidth: 1,
         })
+
       };
     </script>
     <hr/>
@@ -132,7 +141,7 @@
     <hr/>
     <h2>Energy usage ranking against locations with similar number of occupants (last 30 days)</h2>
     <h4>When compared against other service locations within +/- 1 person, in ascending order, your rankings are</h4>
-<table class="table text-center">
+    <table class="table text-center">
       <thead>
       <tr>
         <th scope="col">Address</th>
