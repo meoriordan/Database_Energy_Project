@@ -40,7 +40,6 @@ def register():
         cur.execute('SELECT max(customer_id) FROM customers;')
         customer_id = cur.fetchall()[0][0]
         customer_id += 1
-        print('CUSTOMER IDDDDD: ', customer_id)
         cur.execute('INSERT INTO customers (customer_id, first_name,last_name, username, password)'
                     'VALUES(%s, %s, %s, %s, %s)',
                     (customer_id, first_name, last_name, username, password))
@@ -99,10 +98,9 @@ def locations():
     if request.method == 'GET':
         if session['loggedin']:
             cust_id = str(session['id'])
-            print('cust id issssss(', cust_id, ')')
             conn = get_db_connection()
             cur = conn.cursor()
-            cur.execute('SELECT * FROM locations WHERE customer_id = %s', (cust_id))
+            cur.execute('SELECT * FROM locations WHERE customer_id = %s', (cust_id,))
             locations = cur.fetchall()
             cur.close()
             conn.close()
@@ -131,7 +129,6 @@ def locations():
         else:
             location_id += 1
 
-        # print('CUSTOMER IDDDDD: ',customer_id)
         cur.execute(
             'INSERT INTO locations (location_id, customer_id,street_num, street_name, apt_num, city, state, zipcode, num_br, num_occupants, sqft, date_added)'
             'VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)',
@@ -169,15 +166,16 @@ def devices():
                 'SELECT * '
                 'FROM locations l join location_devices ld on l.location_id = ld.location_id '
                 'join devices d on ld.device_id = d.device_id '
-                'WHERE customer_id = %s',(cust_id))
+                'WHERE customer_id = %s',
+                (cust_id,))
+
             devices = cur.fetchall()
-            print(devices)
             cur.execute('SELECT DISTINCT device_type FROM devices')
             types = [i[0] for i in cur.fetchall()]
             cur.execute('SELECT DISTINCT device_type, model FROM devices')
             type_models = cur.fetchall()
             cur.execute('SELECT location_id, street_num, street_name, apt_num, city, state , zipcode '
-                        'FROM locations WHERE customer_id = %s', (cust_id))
+                        'FROM locations WHERE customer_id = %s', (cust_id,))
             locations = cur.fetchall()
 
             return render_template("devices.html", devices=devices, types=types, type_models=type_models,
@@ -230,3 +228,97 @@ def create():
         conn.close()
         return redirect(url_for('index'))
     return render_template('create.html')
+
+
+@app.route('/dashboard', methods=['GET'])
+def dashboard():
+    if session['loggedin']:
+        cust_id = str(session['id'])
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("SELECT DATE_TRUNC('hour', event_occurrence), SUM(value) "
+                    "FROM events JOIN location_devices USING (device_enrollment_id) JOIN locations USING (location_id) "
+                    "WHERE customer_id=%s AND (event_type = 'energy consumption' OR event_type = 'switch off')"
+                    "GROUP BY DATE_TRUNC('hour', event_occurrence)", (cust_id,))
+        hourly_sum = cur.fetchall()
+        hourly_sum.sort(key=lambda x: x[0])
+        print(hourly_sum)
+
+        cur.execute('SELECT device_type, SUM(value) '
+                    'FROM events JOIN location_devices USING (device_enrollment_id) JOIN locations USING (location_id) '
+                    'JOIN devices USING (device_id) '
+                    "WHERE customer_id = %s AND (event_type = 'energy consumption' OR event_type = 'switch off') "
+                    'GROUP BY device_type', (cust_id,))
+        type_sum_all = cur.fetchall()
+
+        cur.execute('SELECT device_type, SUM(value) '
+                    'FROM events JOIN location_devices USING (device_enrollment_id) JOIN locations USING (location_id) '
+                    'JOIN devices USING (device_id) '
+                    "WHERE customer_id = %s AND (event_type = 'energy consumption' OR event_type = 'switch off') "
+                    "AND event_occurrence > NOW() - INTERVAL '30 days'"
+                    'GROUP BY device_type', (cust_id,))
+        type_sum_30 = cur.fetchall()
+
+        cur.execute('SELECT device_type, SUM(value) '
+                    'FROM events JOIN location_devices USING (device_enrollment_id) JOIN locations USING (location_id) '
+                    'JOIN devices USING (device_id) '
+                    "WHERE customer_id = %s AND (event_type = 'energy consumption' OR event_type = 'switch off') "
+                    "AND event_occurrence > NOW() - INTERVAL '7 days'"
+                    'GROUP BY device_type', (cust_id,))
+        type_sum_7 = cur.fetchall()
+
+        cur.execute("SELECT location_id, sqft, SUM(value) "
+                    "FROM events JOIN location_devices USING(device_enrollment_id) JOIN locations USING (location_id) "
+                    "WHERE customer_id = %s AND event_occurrence > NOW() - INTERVAL '30 days' AND "
+                    "(event_type = 'energy consumption' OR event_type = 'switch off') "
+                    "GROUP BY 1, 2", (cust_id,))
+        loc_sqft_list = cur.fetchall()
+        usage_rank_sqft = []
+        for location in loc_sqft_list:
+            cur.execute("SELECT location_id, RANK() OVER (ORDER BY SUM(value)) "
+                        "FROM events JOIN location_devices USING (device_enrollment_id) "
+                        "JOIN locations USING (location_id) "
+                        "WHERE sqft BETWEEN %s-50 AND %s+50 "
+                        "AND event_occurrence > NOW() - INTERVAL '30 days' AND "
+                        "(event_type = 'energy consumption' OR event_type = 'switch off') "
+                        "GROUP BY location_id"
+                        , (location[1], location[1]))
+            similar_sqft = cur.fetchall()
+            # (location_id, ranking, length)
+            usage_rank_sqft.append(
+                (location[0], next(i for i in similar_sqft if i[0] == location[0])[1], len(similar_sqft))
+            )
+
+        cur.execute("SELECT location_id, num_occupants, SUM(value) "
+                    "FROM events JOIN location_devices USING(device_enrollment_id) JOIN locations USING (location_id) "
+                    "WHERE customer_id = %s AND event_occurrence > NOW() - INTERVAL '30 days' AND "
+                    "(event_type = 'energy consumption' OR event_type = 'switch off') "
+                    "GROUP BY 1, 2", (cust_id,))
+        loc_occupants_list = cur.fetchall()
+        usage_rank_occupants = []
+        for location in loc_occupants_list:
+            cur.execute("SELECT location_id, RANK() OVER (ORDER BY SUM(value)) "
+                        "FROM events JOIN location_devices USING(device_enrollment_id) "
+                        "JOIN locations USING (location_id) "
+                        "WHERE num_occupants BETWEEN %s-1 AND %s+1 AND event_occurrence > NOW() - INTERVAL '30 days' AND "
+                        "(event_type = 'energy consumption' OR event_type = 'switch off') "
+                        "GROUP BY location_id"
+                        , (location[1], location[1]))
+            similar_occupants = cur.fetchall()
+            print(similar_occupants)
+            # (location_id, ranking, length)
+            usage_rank_occupants.append(
+                (location[0], next(i for i in similar_occupants if i[0] == location[0])[1], len(similar_occupants))
+            )
+
+        cur.execute('SELECT * FROM locations')
+        locations = cur.fetchall()
+
+        return render_template('dashboard.html', nav_bar=session['loggedin'], hourly_sum=hourly_sum,
+                               type_sum_all=type_sum_all, type_sum_30=type_sum_30, type_sum_7=type_sum_7,
+                               usage_rank_sqft=usage_rank_sqft, locations=locations,
+                               usage_rank_occupants=usage_rank_occupants,
+                               dates=[i[0].strftime('%-m/%-d/%Y') for i in hourly_sum])
+    else:
+        return redirect(url_for('login'))

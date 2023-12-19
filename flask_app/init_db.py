@@ -12,12 +12,6 @@ conn = psycopg2.connect(
 # Open a cursor to perform database operations
 cur = conn.cursor()
 
-# Execute a command: this creates a new table
-cur.execute('DROP TABLE IF EXISTS books;')
-
-
-# Insert data into the table
-
 cur.execute('DROP TABLE IF EXISTS events;')
 cur.execute('DROP TABLE IF EXISTS location_devices;')
 cur.execute('DROP TABLE IF EXISTS locations;')
