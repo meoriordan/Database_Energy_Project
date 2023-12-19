@@ -16,7 +16,7 @@ def get_db_connection():
                             database='final_project',
                             user=os.environ['DB_USERNAME'],
                             password=os.environ['DB_PASSWORD'],
-                            # port=5434
+                            port=5434
                             )
     return conn
 
@@ -146,8 +146,11 @@ def locations():
 def delete_devices(device_enrollment_id):
     conn = get_db_connection()
     cur = conn.cursor()
+    print('hiii',device_enrollment_id)
     cur.execute('DELETE FROM location_devices WHERE device_enrollment_id = %s', (device_enrollment_id,))
     conn.commit()
+    print('hiii',device_enrollment_id)
+    cur.close()
     conn.close()
     return redirect(url_for('devices'))
 
@@ -165,6 +168,7 @@ def devices():
                 'join devices d on ld.device_id = d.device_id '
                 'WHERE customer_id = %s',
                 (cust_id,))
+
             devices = cur.fetchall()
             cur.execute('SELECT DISTINCT device_type FROM devices')
             types = [i[0] for i in cur.fetchall()]
