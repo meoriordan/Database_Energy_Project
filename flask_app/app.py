@@ -241,13 +241,31 @@ def dashboard():
                     "WHERE customer_id=%s AND (event_type = 'energy consumption' OR event_type = 'switch off')"
                     "GROUP BY DATE_TRUNC('hour', event_occurrence)", (cust_id,))
         hourly_sum = cur.fetchall()
+        hourly_sum.sort(key=lambda x: x[0])
+        print(hourly_sum)
 
         cur.execute('SELECT device_type, SUM(value) '
                     'FROM events JOIN location_devices USING (device_enrollment_id) JOIN locations USING (location_id) '
                     'JOIN devices USING (device_id) '
                     "WHERE customer_id = %s AND (event_type = 'energy consumption' OR event_type = 'switch off') "
                     'GROUP BY device_type', (cust_id,))
-        type_sum = cur.fetchall()
+        type_sum_all = cur.fetchall()
+
+        cur.execute('SELECT device_type, SUM(value) '
+                    'FROM events JOIN location_devices USING (device_enrollment_id) JOIN locations USING (location_id) '
+                    'JOIN devices USING (device_id) '
+                    "WHERE customer_id = %s AND (event_type = 'energy consumption' OR event_type = 'switch off') "
+                    "AND event_occurrence > NOW() - INTERVAL '30 days'"
+                    'GROUP BY device_type', (cust_id,))
+        type_sum_30 = cur.fetchall()
+
+        cur.execute('SELECT device_type, SUM(value) '
+                    'FROM events JOIN location_devices USING (device_enrollment_id) JOIN locations USING (location_id) '
+                    'JOIN devices USING (device_id) '
+                    "WHERE customer_id = %s AND (event_type = 'energy consumption' OR event_type = 'switch off') "
+                    "AND event_occurrence > NOW() - INTERVAL '7 days'"
+                    'GROUP BY device_type', (cust_id,))
+        type_sum_7 = cur.fetchall()
 
         cur.execute("SELECT location_id, sqft, SUM(value) "
                     "FROM events JOIN location_devices USING(device_enrollment_id) JOIN locations USING (location_id) "
@@ -258,13 +276,13 @@ def dashboard():
         usage_rank_sqft = []
         for location in loc_sqft_list:
             cur.execute("SELECT location_id, RANK() OVER (ORDER BY SUM(value)) "
-                        "FROM events JOIN location_devices USING(device_enrollment_id) "
+                        "FROM events JOIN location_devices USING (device_enrollment_id) "
                         "JOIN locations USING (location_id) "
-                        "WHERE sqft BETWEEN %s-50 AND %s+50 AND location_id <> %s "
+                        "WHERE sqft BETWEEN %s-50 AND %s+50 "
                         "AND event_occurrence > NOW() - INTERVAL '30 days' AND "
                         "(event_type = 'energy consumption' OR event_type = 'switch off') "
                         "GROUP BY location_id"
-                        , (location[1], location[1], location[0]))
+                        , (location[1], location[1]))
             similar_sqft = cur.fetchall()
             # (location_id, ranking, length)
             usage_rank_sqft.append(
@@ -285,15 +303,21 @@ def dashboard():
                         "WHERE num_occupants BETWEEN %s-1 AND %s+1 AND event_occurrence > NOW() - INTERVAL '30 days' AND "
                         "(event_type = 'energy consumption' OR event_type = 'switch off') "
                         "GROUP BY location_id"
-                        , (location[1], location[1], location[0]))
+                        , (location[1], location[1]))
             similar_occupants = cur.fetchall()
+            print(similar_occupants)
             # (location_id, ranking, length)
             usage_rank_occupants.append(
                 (location[0], next(i for i in similar_occupants if i[0] == location[0])[1], len(similar_occupants))
             )
 
+        cur.execute('SELECT * FROM locations')
+        locations = cur.fetchall()
+
         return render_template('dashboard.html', nav_bar=session['loggedin'], hourly_sum=hourly_sum,
-                               type_sum=type_sum, usage_percentile_sqft=usage_rank_sqft,
-                               usage_percentile_occupants=usage_rank_occupants)
+                               type_sum_all=type_sum_all, type_sum_30=type_sum_30, type_sum_7=type_sum_7,
+                               usage_rank_sqft=usage_rank_sqft, locations=locations,
+                               usage_rank_occupants=usage_rank_occupants,
+                               dates=[i[0].strftime('%-m/%-d/%Y') for i in hourly_sum])
     else:
         return redirect(url_for('login'))

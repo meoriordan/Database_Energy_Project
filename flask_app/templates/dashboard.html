@@ -2,10 +2,10 @@
 
 {% block content %}
 
-  <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
-  </script>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+  <script type="text/javascript"
+          src="{{ url_for('static', filename='nice-select2/dist/js/nice-select2.js' ) }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='nice-select2/dist/css/nice-select2.css' ) }}">
   <div class="container-md text-center">
     <br/><br/>
     <br/><br/>
@@ -13,65 +13,142 @@
     <hr/>
     <br/>
     <h2>Energy usage over time</h2>
-
-    <canvas id="over_time" style="width:100%;max-width:700px;margin-left:auto;margin-right:auto"></canvas>
-    <script type="text/javascript">
-      let xValues = [];
-      let yValues = [];
-
-      {% for hour in hourly_sum %}
-        xValues.push(hour[0])
-        yValues.push(hour[1])
+    <h4>Select Date:</h4>
+    <select id="date" onchange="update_time_chart()">
+      <option value="" selected>Select Date</option>
+      {% for date in dates|unique %}
+        <option value="{{ date }}">{{ date }}</option>
       {% endfor %}
+    </select>
+    <script>
+      let options = {searchable: true};
+      NiceSelect.bind(document.getElementById('date'), options);
+    </script>
+    <canvas id="over_time" style="width:100%;max-width:1000px;margin-left:auto;margin-right:auto"></canvas>
+    <script type="text/javascript">
+      const update_time_chart = () => {
+        let xValues = ['12:00 AM', '1:00 AM', '2:00 AM', '3:00 AM', '4:00 AM', '5:00 AM', '6:00 AM', '7:00 AM',
+          '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM',
+          '5:00 PM', '6:00 PM', '7:00 PM',
+          '8:00 PM', '9:00 PM', '10:00 PM', '11:00 PM'];
+        let yValues = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        const selected_date = document.getElementById('date').value
 
-      new Chart("over_time", {
-        type: "line",
-        data: {
-          labels: xValues,
-          datasets: [{
-            backgroundColor: "rgba(0,0,255,0.3)",
-            borderColor: "rgba(0,0,255,1.0)",
-            data: yValues
-          }]
-        },
-        options: {}
-      });
+        {% for hour in hourly_sum %}
+          if (new Date('{{hour[0]}}').toLocaleDateString() === selected_date) {
+            yValues[new Date('{{hour[0]}}').getHours()] = {{hour[1]}};
+          }
+        {% endfor %}
+        new Chart("over_time", {
+          type: "line",
+          data: {
+            labels: xValues,
+            datasets: [{
+              label: 'Energy Usage (kWh)',
+              backgroundColor: "rgba(0,0,255,0.3)",
+              borderColor: "rgba(0,0,255,1.0)",
+              data: yValues
+            }]
+          },
+          options: {}
+        });
+      }
     </script>
     <hr/>
+    <br/>
     <h2>Energy usage by device type</h2>
+    <select class="form-select" id="type" onchange="update_type_chart()">
+      <option value="" selected>Select Date Range</option>
+
+      <option value="all"> All times</option>
+      <option value="30"> Last 30 Days</option>
+      <option value="7"> Last 7 Days</option>
+    </select>
     <canvas id="by_device" style="width:100%;max-width:700px;margin-left:auto;margin-right:auto"></canvas>
+
     <script type="text/javascript">
-      let xValues = [];
-      let yValues = [];
+      const update_type_chart = () => {
+        let xValues = [];
+        let yValues = [];
+        const range = document.getElementById('type').value;
+        if (range === 'all') {
+          {% for type in type_sum_all %}
+            xValues.push('{{type[0]}}')
+            yValues.push({{type[1]}})
+          {% endfor %}
+        } else if (range === '30') {
+          {% for type in type_sum_30 %}
+            xValues.push('{{type[0]}}')
+            yValues.push({{type[1]}})
+          {% endfor %}
+        } else if (range === '7') {
+          {% for type in type_sum_7 %}
+            xValues.push('{{type[0]}}')
+            yValues.push({{type[1]}})
+          {% endfor %}
+        }
 
-      {% for type in type_sum %}
-        xValues.push(type[0])
-        yValues.push(type[1])
-      {% endfor %}
-
-      new Chart("by_device", {
-        type: "bar",
-        data: {
-          labels: xValues,
-          datasets: [{
-            backgroundColor: "rgba(0,0,255,0.3)",
-            borderColor: "rgba(0,0,255,1.0)",
-            data: yValues
-          }]
-        },
-        options: {}
-      });
+        new Chart("by_device", {
+          type: "pie",
+          data: {
+            labels: xValues,
+            datasets: [{
+              backgroundColor: [
+                'rgb(255, 99, 132)',
+                'rgb(54, 162, 235)',
+                'rgb(255, 205, 86)',
+                'rgb(128,255,86)',
+                'rgb(213,86,255)',
+                'rgb(215,99,18)'
+              ],
+              data: yValues
+            }]
+          },
+          options: {},
+          borderWidth: 1,
+        })
+      };
     </script>
     <hr/>
     <h2>Energy usage ranking against locations with similar area (last 30 days)</h2>
-    {% for location in usage_rank_sqft %}
-      <p>location id: {{ location[0] }}; rank {{ location[1] }} out of {{ location[2] }}</p>
-    {% endfor %}
+    <h4>When compared against other service locations within +/- 50 sqft, in ascending order, your rankings are</h4>
+    <table class="table text-center">
+      <thead>
+      <tr>
+        <th scope="col">Address</th>
+        <th scope="col">Energy Usage Ranking</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for rank in usage_rank_sqft %}
+        {% set location=locations[rank[0]] %}
+        <tr>
+          <td>{{ location[2]|string+' '+location[3]|string+', Apt '+location[4]|string+', '+location[5]|string+', '+location[6]|string+' '+location[7]|string }}</td>
+          <td>{{ rank[1] }} out of {{ rank[2] }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
     <hr/>
     <h2>Energy usage ranking against locations with similar number of occupants (last 30 days)</h2>
-    {% for location in usage_percentile_occupants %}
-      <p>location id: {{ location[0] }}; rank {{ location[1] }} out of {{ location[2] }}</p>
-    {% endfor %}
+    <h4>When compared against other service locations within +/- 1 person, in ascending order, your rankings are</h4>
+<table class="table text-center">
+      <thead>
+      <tr>
+        <th scope="col">Address</th>
+        <th scope="col">Energy Usage Ranking</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for rank in usage_rank_occupants %}
+        {% set location=locations[rank[0]] %}
+        <tr>
+          <td>{{ location[2]|string+' '+location[3]|string+', Apt '+location[4]|string+', '+location[5]|string+', '+location[6]|string+' '+location[7]|string }}</td>
+          <td>{{ rank[1] }} out of {{ rank[2] }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
     <hr/>
   </div>
 {% endblock %}
